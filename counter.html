@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <title>First DApp</title>
+</head>
+<body>
+ Increment
+ <button id="incr">+</button>
+ <br>
+ Decrement
+ <button id="decr">-</button>
+ <br />
+ <label id="myLabel"></label>
+</body>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"
+ integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/web3@1.2.6/dist/web3.min.js"></script>
+<script>
+    const web3 = new Web3('http://localhost:8545');
+    const myContractAddress = '0x2a8B33165E001BEd14b382ee6cb4714916713f69';
+    const myAbi = [{"inputs":[],"name":"count","outputs":[{"internalType":"int256","name":"","type":"int256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"decr","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"display","outputs":[{"internalType":"int256","name":"","type":"int256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"incr","outputs":[],"stateMutability":"nonpayable","type":"function"}];//'.build/counter_sol_FirstContract.abi';
+    const myContract = new web3.eth.Contract(myAbi, myContractAddress);
+    const htmlLabel = document.getElementById('myLabel');
+    myContract.methods.display().call().then((jsonRpcResult) => {
+      htmlLabel.innerHTML = jsonRpcResult;
+      console.log(jsonRpcResult);
+    });
+    $('#incr').click(function () {
+      myContract.methods.incr().send({from:'0x496fB73C949f4605be3aaBDE76aD78EFFB5dD78f'},function () {
+        myContract.methods.display().call((error, result) => { htmlLabel.innerHTML = result; console.log(result) })
+      })
+    });
+    $('#decr').click(function () {
+      myContract.methods.decr().send({from:'0x496fB73C949f4605be3aaBDE76aD78EFFB5dD78f'}, function () {
+        myContract.methods.display().call((error, result) => { htmlLabel.innerHTML = result; console.log(result) })
+      })
+    });
+   </script>
+   </html>
+   
