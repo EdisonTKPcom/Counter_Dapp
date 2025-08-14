@@ -4,37 +4,63 @@
  <title>First DApp</title>
 </head>
 <body>
- Increment
- <button id="incr">+</button>
- <br>
- Decrement
- <button id="decr">-</button>
- <br />
- <label id="myLabel"></label>
+ <h1>Counter DApp</h1>
+ <p id="networkStatus">Connecting...</p>
+ <div>
+   <button id="incr">+</button>
+   <button id="decr">-</button>
+ </div>
+ <p>Current Count: <span id="myLabel">0</span></p>
+ <p><small>Open browser console for event logs.</small></p>
 </body>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"
  integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/web3@1.2.6/dist/web3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.1/dist/ethers.umd.min.js"></script>
 <script>
-    const web3 = new Web3('http://localhost:8545');
-    const myContractAddress = '0x2a8B33165E001BEd14b382ee6cb4714916713f69';
-    const myAbi = [{"inputs":[],"name":"count","outputs":[{"internalType":"int256","name":"","type":"int256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"decr","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"display","outputs":[{"internalType":"int256","name":"","type":"int256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"incr","outputs":[],"stateMutability":"nonpayable","type":"function"}];//'.build/counter_sol_FirstContract.abi';
-    const myContract = new web3.eth.Contract(myAbi, myContractAddress);
-    const htmlLabel = document.getElementById('myLabel');
-    myContract.methods.display().call().then((jsonRpcResult) => {
-      htmlLabel.innerHTML = jsonRpcResult;
-      console.log(jsonRpcResult);
-    });
-    $('#incr').click(function () {
-      myContract.methods.incr().send({from:'0x496fB73C949f4605be3aaBDE76aD78EFFB5dD78f'},function () {
-        myContract.methods.display().call((error, result) => { htmlLabel.innerHTML = result; console.log(result) })
-      })
-    });
-    $('#decr').click(function () {
-      myContract.methods.decr().send({from:'0x496fB73C949f4605be3aaBDE76aD78EFFB5dD78f'}, function () {
-        myContract.methods.display().call((error, result) => { htmlLabel.innerHTML = result; console.log(result) })
-      })
-    });
+    // Simple frontend script expecting user to paste deployed address below:
+    const CONTRACT_ADDRESS = localStorage.getItem('counterAddress') || 'PASTE_DEPLOYED_ADDRESS_HERE';
+    if (CONTRACT_ADDRESS === 'PASTE_DEPLOYED_ADDRESS_HERE') {
+      document.getElementById('networkStatus').innerText = 'Please deploy the contract and set address in localStorage key counterAddress';
+    }
+
+    async function init() {
+      let provider;
+      if (window.ethereum) {
+        provider = new ethers.BrowserProvider(window.ethereum);
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+      } else {
+        provider = new ethers.JsonRpcProvider('http://localhost:8545');
+      }
+      // Try Hardhat artifact first
+      let abi;
+      try {
+        const artifact = await fetch('artifacts/contracts/Counter.sol/Counter.json').then(r=>r.json());
+        abi = artifact.abi;
+      } catch (e) {
+        // fallback legacy abi path
+        abi = await fetch('build/counter_sol_Counter.abi').then(r=>r.json());
+      }
+      const signer = await provider.getSigner();
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, abi, signer);
+      const htmlLabel = document.getElementById('myLabel');
+      const statusEl = document.getElementById('networkStatus');
+      statusEl.innerText = 'Connected to ' + (provider._network ? provider._network.name : 'network');
+      async function refresh() {
+        try {
+          const val = await (contract.getCount ? contract.getCount() : contract.display());
+          htmlLabel.innerText = val.toString();
+        } catch (e) { console.error(e); }
+      }
+      await refresh();
+      document.getElementById('incr').onclick = async () => { await (contract.increment ? contract.increment() : contract.incr()); await refresh(); };
+      document.getElementById('decr').onclick = async () => { try { await (contract.decrement ? contract.decrement() : contract.decr()); } catch(e){ console.warn(e);} await refresh(); };
+      // Listen for events
+      if (contract.on) {
+        contract.on('Incremented', (newValue)=>{ console.log('Incremented ->', newValue.toString()); refresh(); });
+        contract.on('Decremented', (newValue)=>{ console.log('Decremented ->', newValue.toString()); refresh(); });
+      }
+    }
+    init();
    </script>
    </html>
    

@@ -4,13 +4,23 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:sol": "npx hardhat compile",
+    "dev": "npx hardhat node",
+    "test": "npx hardhat test",
+    "deploy": "npx hardhat run scripts/deploy.js --network localhost",
+    "lint": "echo 'add linter'"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
-    "ganache-cli": "^6.12.2",
-    "solc": "^0.8.9",
-    "web3": "^1.6.0"
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+  "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+  "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
+  "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "chai": "^4.4.1",
+    "ethers": "^6.13.1",
+    "hardhat": "^2.22.7"
   }
 }
